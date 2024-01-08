@@ -73,14 +73,16 @@ public class CalculateAverage_sunshine {
         try (BufferedReader reader = new BufferedReader(new FileReader(Paths.get(FILE).toFile()))) {
             reader.lines().parallel().forEach(line -> {
                 String[] parts = line.split(";");
-                Measurement measurement = new Measurement(parts);
-                measrements.compute(measurement.station(), (station, aggregator) -> {
+                // Measurement measurement = new Measurement(parts);
+                String station = parts[0];
+                double measurement = Double.parseDouble(parts[1]);
+                measrements.compute(station, (s, aggregator) -> {
                     if (aggregator == null) {
                         aggregator = new MeasurementAggregator();
                     }
-                    aggregator.min = Math.min(aggregator.min, measurement.value);
-                    aggregator.max = Math.max(aggregator.max, measurement.value);
-                    aggregator.sum += measurement.value;
+                    aggregator.min = Math.min(aggregator.min, measurement);
+                    aggregator.max = Math.max(aggregator.max, measurement);
+                    aggregator.sum += measurement;
                     aggregator.count++;
                     return aggregator;
                 });
