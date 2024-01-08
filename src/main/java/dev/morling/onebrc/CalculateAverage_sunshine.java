@@ -63,7 +63,7 @@ public class CalculateAverage_sunshine {
                 String[] parts = line.split(";");
                 String station = parts[0];
                 double measurement = Double.parseDouble(parts[1]);
-                measurements.compute(station, (s, aggregator) -> {
+                measurements.compute(station, (_, aggregator) -> {
                     if (aggregator == null) {
                         aggregator = new MeasurementAggregator();
                     }
