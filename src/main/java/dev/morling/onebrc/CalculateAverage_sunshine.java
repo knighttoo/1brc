@@ -18,40 +18,28 @@ package dev.morling.onebrc;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collector;
-
-import static java.util.stream.Collectors.groupingBy;
 
 public class CalculateAverage_sunshine {
 
     private static final String FILE = "./measurements.txt";
-
-    private static record Measurement(String station, double value) {
-        private Measurement(String[] parts) {
-            this(parts[0], Double.parseDouble(parts[1]));
-        }
-    }
-
-    private static record ResultRow(double min, double mean, double max) {
-        public String toString() {
-            return round(min) + "/" + round(mean) + "/" + round(max);
-        }
-
-        private double round(double value) {
-            return Math.round(value * 10.0) / 10.0;
-        }
-    };
 
     private static class MeasurementAggregator {
         private double min = Double.POSITIVE_INFINITY;
         private double max = Double.NEGATIVE_INFINITY;
         private double sum;
         private long count;
+
+        @Override
+        public String toString() {
+            return round(min) + "/" + round(sum / count) + "/" + round(max);
+        }
+
+        private double round(double value) {
+            return Math.round(value * 10.0) / 10.0;
+        }
     }
 
     public static void main(String[] args) throws IOException {
@@ -69,14 +57,13 @@ public class CalculateAverage_sunshine {
         // chuck out the lines
         // move the work and remove news
 
-        Map<String, MeasurementAggregator> measrements = new ConcurrentHashMap<>();
+        Map<String, MeasurementAggregator> measurements = new ConcurrentHashMap<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(Paths.get(FILE).toFile()))) {
             reader.lines().parallel().forEach(line -> {
                 String[] parts = line.split(";");
-                // Measurement measurement = new Measurement(parts);
                 String station = parts[0];
                 double measurement = Double.parseDouble(parts[1]);
-                measrements.compute(station, (s, aggregator) -> {
+                measurements.compute(station, (s, aggregator) -> {
                     if (aggregator == null) {
                         aggregator = new MeasurementAggregator();
                     }
@@ -89,12 +76,7 @@ public class CalculateAverage_sunshine {
             });
         }
 
-        Map<String, String> resultsOf = new TreeMap<>();
-        for (Map.Entry<String, MeasurementAggregator> entryOf : measrements.entrySet()) {
-            MeasurementAggregator aggregator = entryOf.getValue();
-            resultsOf.put(entryOf.getKey(), new ResultRow(aggregator.min, aggregator.sum / aggregator.count, aggregator.max).toString());
-        }
-        System.out.println(resultsOf);
+        System.out.println(measurements);
 
         /*
          * Collector<Measurement, MeasurementAggregator, ResultRow> collector = Collector.of(
@@ -111,17 +93,17 @@ public class CalculateAverage_sunshine {
          * res.max = Math.max(agg1.max, agg2.max);
          * res.sum = agg1.sum + agg2.sum;
          * res.count = agg1.count + agg2.count;
-         * 
+         *
          * return res;
          * },
          * agg -> {
          * return new ResultRow(agg.min, agg.sum / agg.count, agg.max);
          * });
-         * 
+         *
          * Map<String, ResultRow> measurements = new TreeMap<>(Files.lines(Paths.get(FILE))
          * .map(l -> new Measurement(l.split(";")))
          * .collect(groupingBy(m -> m.station(), collector)));
-         * 
+         *
          * System.out.println(measurements);
          */
     }
